@@ -193,7 +193,7 @@ td.mono{font-family:var(--mono);font-size:.74rem}
 
 <header class="top">
   <div class="brand"><div class="mark">TF</div>
-    <div class="brand-t"><strong>TRADEFORCE</strong><span>REFERRAL ENGINE · POWERED BY SUPABASE</span></div>
+    <div class="brand-t"><strong>TRADEFORCE</strong><span>REFERRAL ENGINE · POWERED BY TRENDORA INC</span></div>
   </div>
   <div class="userchip" id="userChip" hidden>
     <span class="who" id="ucName"></span><span id="ucTag"></span>
@@ -257,7 +257,10 @@ td.mono{font-family:var(--mono);font-size:.74rem}
         <label for="rgEmail">EMAIL</label>
         <input type="email" id="rgEmail" required>
         <label for="rgPass">PASSWORD (MIN 6 CHARACTERS)</label>
-        <input type="password" id="rgPass" minlength="6" required>
+<input type="password" id="rgPass" minlength="6" required>
+
+<label for="rgPassConfirm">CONFIRM PASSWORD</label>
+<input type="password" id="rgPassConfirm" minlength="6" required>
         <button class="btn btn-mint btn-full" style="margin-top:18px" id="rgBtn" type="submit">Create my REF ID →</button>
       </form>
       <p class="demo-hint">Signing up always creates a <b>REF</b> account. Admin access is granted only by the project owner, directly inside Supabase — see the manual.</p>
@@ -465,6 +468,9 @@ $('#loginForm').onsubmit=async e=>{e.preventDefault();
   e.target.reset();await boot(data.user);
   toast('Logged in','gold');};
 $('#regForm').onsubmit=async e=>{e.preventDefault();
+																  if ($('#rgPass').value !== $('#rgPassConfirm').value) {
+    return toast('Passwords do not match — please check your typing', 'warn');
+  }
   const btn=$('#rgBtn');btn.disabled=true;btn.textContent='CREATING…';
   const {data,error}=await sb.auth.signUp({email:$('#rgEmail').value.trim(),password:$('#rgPass').value,
     options:{data:{name:$('#rgName').value.trim(),whatsapp:digits($('#rgPhone').value)}}});
