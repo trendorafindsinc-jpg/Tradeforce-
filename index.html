@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tradeforce — Earn Every Saturday</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23f6b32b'/><text x='16' y='22' font-size='16' font-family='Arial Black' text-anchor='middle' fill='%230a0d0b'>TF</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Spline+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#0a0d0b;--panel:#10150f;--panel2:#0c110c;--line:#20301f;--line2:#2c452a;
+  --ink:#eef6ea;--muted:#93ac8e;--dim:#5f7a5c;--gold:#f6b32b;--gold2:#ffd469;--mint:#35e08d;--coral:#ff5d49;--ember:#ff7a2f;
+  --mono:'IBM Plex Mono',monospace;--disp:'Syne',sans-serif;--body:'Spline Sans',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;z-index:-2;background:
+  radial-gradient(900px 480px at 90% -10%,rgba(53,224,141,.10),transparent 60%),
+  radial-gradient(800px 460px at -10% 30%,rgba(246,179,43,.10),transparent 60%),
+  radial-gradient(700px 420px at 50% 110%,rgba(255,122,47,.07),transparent 60%),var(--bg)}
+body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(147,172,142,.05) 0 1px,transparent 1px 44px),
+  repeating-linear-gradient(90deg,rgba(147,172,142,.05) 0 1px,transparent 1px 44px);
+  mask-image:radial-gradient(1100px 800px at 50% 0%,#000 30%,transparent 100%)}
+::selection{background:var(--gold);color:#161006}
+[hidden]{display:none!important}
+button{font-family:inherit;cursor:pointer}
+input{font-family:var(--mono);font-size:.88rem}
+main{max-width:1160px;margin:0 auto;padding:0 18px 70px}
+@media(min-width:700px){main{padding:0 28px 80px}}
+
+/* ticker */
+.ticker{display:flex;border-bottom:1px solid var(--line);background:#070a07;overflow:hidden;position:sticky;top:0;z-index:50}
+.live{flex:0 0 auto;display:flex;align-items:center;gap:7px;padding:10px 14px;background:linear-gradient(120deg,var(--ember),var(--gold));color:#161006;font-family:var(--mono);font-size:.66rem;font-weight:600;letter-spacing:.14em}
+.live i{width:8px;height:8px;border-radius:50%;background:#161006;animation:blink 1.2s infinite}
+@keyframes blink{50%{opacity:.25}}
+.tick-wrap{overflow:hidden;flex:1}
+.tick-track{display:flex;gap:2.4rem;width:max-content;padding:10px 0;animation:tick 34s linear infinite}
+@keyframes tick{to{transform:translateX(-50%)}}
+.tk{font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;color:var(--muted);white-space:nowrap;display:flex;gap:8px;align-items:center}
+.tk b{color:var(--ink);font-weight:500}.tk i{font-style:normal;color:var(--mint);font-size:.6rem}.tk:nth-child(even) i{color:var(--gold)}
+
+/* topbar */
+.top{max-width:1160px;margin:0 auto;padding:14px 18px;display:flex;align-items:center;gap:14px}
+.brand{display:flex;align-items:center;gap:11px}
+.mark{width:40px;height:40px;background:linear-gradient(135deg,var(--gold),var(--ember));color:#161006;font-family:var(--disp);font-weight:800;display:grid;place-items:center;border-radius:9px;box-shadow:0 8px 22px -6px rgba(246,179,43,.55)}
+.brand-t strong{font-family:var(--disp);font-weight:800;letter-spacing:.06em;font-size:1.05rem;display:block;line-height:1.1}
+.brand-t span{font-family:var(--mono);font-size:.56rem;letter-spacing:.2em;color:var(--muted)}
+.userchip{margin-left:auto;display:flex;align-items:center;gap:9px}
+.userchip .who{font-size:.85rem;font-weight:600}
+
+/* chips */
+.chip{font-family:var(--mono);font-size:.66rem;letter-spacing:.06em;padding:3px 8px;border-radius:4px;white-space:nowrap}
+.tag-ref{background:rgba(53,224,141,.1);color:var(--mint);border:1px solid rgba(53,224,141,.35)}
+.tag-mem{background:rgba(246,179,43,.1);color:var(--gold2);border:1px solid rgba(246,179,43,.4)}
+.tag-admin{background:var(--gold);color:#161006;font-weight:600}
+.schip{font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;padding:4px 9px;border-radius:3px;white-space:nowrap}
+.s-pending{color:var(--gold2);border:1px solid rgba(246,179,43,.45)}
+.s-verified{color:#0d261a;background:var(--mint);font-weight:600}
+.s-rejected{color:#2b0d09;background:var(--coral);font-weight:600}
+.s-requested{color:#161006;background:var(--gold);font-weight:600}
+.s-paid{color:var(--dim);border:1px solid var(--line2)}
+.s-banned{color:#2b0d09;background:var(--coral);font-weight:600}
+.s-active{color:var(--mint);border:1px solid rgba(53,224,141,.4)}
+
+/* buttons / forms */
+.btn{border:none;border-radius:8px;font-family:var(--mono);font-size:.74rem;font-weight:600;letter-spacing:.1em;padding:14px 20px;transition:.2s;text-transform:uppercase;min-height:46px}
+.btn:hover{transform:translateY(-2px)}.btn:active{transform:translateY(0)}
+.btn:disabled{opacity:.45;transform:none}
+.btn-gold{background:linear-gradient(120deg,var(--gold),var(--gold2));color:#161006;box-shadow:0 12px 26px -10px rgba(246,179,43,.6)}
+.btn-ember{background:linear-gradient(120deg,var(--ember),var(--gold));color:#161006;box-shadow:0 12px 26px -10px rgba(255,122,47,.6)}
+.btn-mint{background:rgba(53,224,141,.14);color:var(--mint);border:1px solid rgba(53,224,141,.45)}
+.btn-coral{background:rgba(255,93,73,.12);color:var(--coral);border:1px solid rgba(255,93,73,.45)}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--line2)}
+.btn-ghost:hover{color:var(--ink)}
+.btn-sm{padding:9px 13px;font-size:.62rem;min-height:0}
+.btn-full{width:100%}
+.btn.armed{background:var(--coral);color:#2b0d09;border-color:var(--coral)}
+label{display:block;font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;color:var(--dim);margin:13px 0 6px}
+input[type=text],input[type=tel],input[type=password],input[type=email]{width:100%;background:#0d130c;border:1px solid var(--line);border-radius:8px;color:var(--ink);padding:13px 12px;outline:none;transition:.2s}
+input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(246,179,43,.15)}
+input.err{border-color:var(--coral);animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.link{background:none;border:none;color:var(--gold2);font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;padding:0;margin-top:12px;text-decoration:underline}
+
+/* cards */
+.card{background:linear-gradient(180deg,#121a10,#0c110c);border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:0 26px 54px -40px #000}
+.card h3{font-family:var(--disp);font-weight:700;font-size:1.05rem;margin-bottom:3px}
+.card .sub{font-size:.8rem;color:var(--muted);margin-bottom:14px}
+.sec-head{display:flex;align-items:center;gap:12px;margin:38px 0 16px;flex-wrap:wrap}
+.sec-no{font-family:var(--mono);color:var(--gold);font-size:.78rem}
+.sec-head h2{font-family:var(--disp);font-weight:700;font-size:1.25rem}
+.sec-line{flex:1;height:1px;background:linear-gradient(90deg,var(--line2),transparent)}
+.sec-meta{font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;color:var(--dim)}
+
+/* ══ HERO ══ */
+.hero{position:relative;padding:44px 0 26px;overflow:hidden}
+.embers span{position:absolute;bottom:-8px;width:5px;height:5px;border-radius:50%;background:var(--gold2);opacity:0;filter:blur(.5px);animation:floatUp linear infinite}
+@keyframes floatUp{0%{opacity:0;transform:translateY(0)}12%{opacity:.9}100%{opacity:0;transform:translateY(-70vh) translateX(24px)}}
+.scene{position:absolute;left:0;right:0;bottom:0;width:100%;height:190px;opacity:.9;pointer-events:none;
+  mask-image:linear-gradient(to top,#000 70%,transparent)}
+.torch{animation:torchPulse 1.1s ease-in-out infinite;filter:drop-shadow(0 0 14px #ffd469)}
+@keyframes torchPulse{50%{opacity:.55;r:8}}
+.sparks{transform-box:fill-box;transform-origin:center;animation:sparkFly 1s ease-out infinite}
+.sparks line:nth-child(2){animation-delay:.15s}.sparks line:nth-child(3){animation-delay:.3s}.sparks line:nth-child(4){animation-delay:.45s}
+@keyframes sparkFly{0%{opacity:0;transform:scale(.3)}30%{opacity:1}100%{opacity:0;transform:scale(1.7)}}
+.arm{transform-box:fill-box;transform-origin:12% 60%;animation:hammer 1.5s ease-in-out infinite}
+@keyframes hammer{0%,100%{transform:rotate(0)}55%{transform:rotate(-34deg)}}
+.hero-grid{position:relative;z-index:2}
+.eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.26em;color:var(--mint);margin-bottom:14px}
+h1{font-family:var(--disp);font-weight:800;font-size:clamp(2.1rem,7.4vw,3.6rem);line-height:1.05;letter-spacing:-.01em}
+h1 em{font-style:normal;color:var(--gold);text-shadow:0 0 36px rgba(246,179,43,.4)}
+.lede{color:var(--muted);max-width:56ch;margin:16px 0 22px}
+.lede b{color:var(--ink)}
+.cta-row{display:flex;gap:12px;flex-wrap:wrap}
+/* live earnings card */
+.earn{position:relative;overflow:hidden;margin-top:26px}
+.earn::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--ember),var(--gold),transparent)}
+.earn-label{font-family:var(--mono);font-size:.6rem;letter-spacing:.24em;color:var(--muted);display:flex;align-items:center;gap:8px}
+.earn-label i{width:7px;height:7px;border-radius:50%;background:var(--ember);animation:blink 1s infinite}
+.earn-amt{font-family:var(--mono);font-weight:600;font-size:clamp(1.9rem,6.5vw,2.8rem);color:var(--gold2);margin:6px 0 10px;text-shadow:0 0 30px rgba(246,179,43,.35)}
+.earn-amt.pop{animation:pop .4s}
+@keyframes pop{40%{transform:scale(1.06);color:#fff}}
+.earn-sub{display:flex;gap:18px;font-family:var(--mono);font-size:.68rem;color:var(--muted);margin-bottom:14px;flex-wrap:wrap}
+.earn-sub b{color:var(--mint)}
+#liveFeed{display:flex;flex-direction:column;gap:6px;max-height:196px;overflow:hidden}
+.frow{display:flex;gap:10px;align-items:baseline;font-family:var(--mono);font-size:.7rem;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:7px;padding:8px 10px;animation:rowIn .45s cubic-bezier(.2,.9,.3,1.2)}
+.frow .amt{margin-left:auto;color:var(--gold2);font-weight:600;white-space:nowrap}
+.frow .who{color:var(--mint)}
+@keyframes rowIn{from{opacity:0;transform:translateY(-12px) scale(.96)}}
+@media(min-width:960px){.hero-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:44px;align-items:center}.earn{margin-top:0}}
+
+/* stat band */
+.band{display:grid;grid-template-columns:1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:8px}
+.band div{background:var(--panel2);padding:16px 18px}
+.band small{font-family:var(--mono);font-size:.56rem;letter-spacing:.2em;color:var(--dim);display:block;margin-bottom:5px}
+.band b{font-family:var(--mono);font-size:1.35rem;font-variant-numeric:tabular-nums}
+.band .g b{color:var(--gold2)}.band .m b{color:var(--mint)}.band .e b{color:var(--ember)}
+@media(min-width:700px){.band{grid-template-columns:repeat(4,1fr)}}
+
+/* how strip */
+.how{display:grid;grid-template-columns:1fr;border:1px dashed var(--line2);border-radius:12px;overflow:hidden;margin:26px 0 6px}
+.how div{padding:13px 16px;display:flex;gap:12px;align-items:center;border-bottom:1px dashed var(--line2);font-size:.85rem;color:var(--muted)}
+.how div:last-child{border-bottom:0}
+.how b{font-family:var(--mono);color:var(--gold);font-size:.7rem;flex:0 0 auto}
+.how strong{color:var(--ink)}
+@media(min-width:820px){.how{grid-template-columns:repeat(4,1fr)}.how div{border-bottom:0;border-right:1px dashed var(--line2)}.how div:last-child{border-right:0}}
+
+/* auth */
+.mode-btns{display:flex;border:1px solid var(--line2);border-radius:9px;overflow:hidden;margin-bottom:4px}
+.mode-btns button{flex:1;background:none;border:none;color:var(--muted);font-family:var(--mono);font-size:.66rem;letter-spacing:.14em;padding:13px;transition:.2s;min-height:44px}
+.mode-btns button.on{background:var(--gold);color:#161006;font-weight:600}
+.demo-hint{margin-top:14px;font-family:var(--mono);font-size:.62rem;color:var(--dim);line-height:1.8}
+.demo-hint b{color:var(--muted)}
+
+/* drop zone */
+.drop{display:block;border:1.5px dashed var(--line2);border-radius:10px;padding:20px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;cursor:pointer;transition:.2s;margin-top:4px}
+.drop:hover{border-color:var(--mint);color:var(--ink)}
+.drop input{display:none}
+.shot-prev{position:relative;margin-top:4px}
+.shot-prev img{width:120px;border-radius:8px;border:1px solid var(--line2)}
+.shot-prev button{position:absolute;top:-8px;left:108px;background:var(--coral);border:none;color:#2b0d09;width:24px;height:24px;border-radius:50%;font-weight:700}
+
+/* tables */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:640px}
+th{font-family:var(--mono);font-size:.56rem;letter-spacing:.18em;color:var(--dim);text-align:left;padding:8px 10px;border-bottom:1px solid var(--line2)}
+td{padding:10px;border-bottom:1px dashed var(--line);font-size:.84rem;vertical-align:middle}
+tbody tr{transition:background .2s;animation:rise .35s ease both}
+tbody tr:hover{background:rgba(238,246,234,.03)}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}}
+td.mono{font-family:var(--mono);font-size:.74rem}
+.dim{color:var(--dim)}
+.acct{color:var(--gold2);font-weight:600;letter-spacing:.06em}
+@media(max-width:640px){
+  table{min-width:0}
+  thead{display:none}
+  table,tbody,tr,td{display:block;width:100%}
+  tr{border:1px solid var(--line);border-radius:12px;margin-bottom:12px;padding:8px 12px;background:var(--panel2)}
+  td{display:flex;justify-content:space-between;align-items:center;gap:12px;border:0;padding:7px 0}
+  td::before{content:attr(data-l);font-family:var(--mono);font-size:.56rem;letter-spacing:.16em;color:var(--dim);flex:0 0 auto}
+}
+
+/* balance / withdraw */
+.bal{position:relative;overflow:hidden}
+.bal::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--mint),transparent 70%)}
+.bal-label{font-family:var(--mono);font-size:.6rem;letter-spacing:.24em;color:var(--muted)}
+.bal-amt{font-family:var(--mono);font-weight:600;font-size:clamp(2.1rem,8vw,3rem);color:var(--mint);margin:6px 0 12px;text-shadow:0 0 30px rgba(53,224,141,.3)}
+.bal-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 18px;font-family:var(--mono);font-size:.66rem;color:var(--muted)}
+.bal-grid b{display:block;color:var(--ink);font-size:.95rem}
+.bal-grid .g b{color:var(--gold2)}.bal-grid .c b{color:var(--coral)}
+@media(min-width:560px){.bal-grid{grid-template-columns:repeat(4,auto)}}
+.gate{border:1.5px dashed var(--line2);border-radius:10px;padding:22px;text-align:center}
+.gate .g2{font-family:var(--mono);font-size:1.4rem;color:var(--gold2);margin:8px 0 4px}
+.gate .g3{font-size:.76rem;color:var(--dim)}
+.open-badge{display:inline-block;font-family:var(--mono);font-size:.62rem;letter-spacing:.16em;background:rgba(53,224,141,.14);border:1px solid var(--mint);color:var(--mint);padding:6px 12px;border-radius:5px;animation:blink 1.6s infinite;margin-bottom:10px}
+.wd-hist{margin-top:18px;border-top:1px dashed var(--line2);padding-top:12px}
+.wd-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line);font-family:var(--mono);font-size:.7rem;flex-wrap:wrap}
+.wd-row:last-child{border-bottom:0}
+.wd-row .amt{margin-left:auto;color:var(--gold2);font-weight:600}
+
+/* verify queue */
+.vq{display:grid;grid-template-columns:1fr;gap:16px}
+@media(min-width:860px){.vq{grid-template-columns:1fr 1fr}}
+.vcard{display:grid;grid-template-columns:104px 1fr;gap:14px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px;animation:rise .4s ease both}
+.vcard img{width:104px;height:146px;object-fit:cover;border-radius:8px;border:1px solid var(--line2);cursor:zoom-in;background:#0b141a}
+.vmeta{display:flex;flex-direction:column;gap:6px;font-size:.82rem}
+.vmeta .nm{font-weight:600;font-size:.95rem}
+.vmeta .when{font-family:var(--mono);font-size:.62rem;color:var(--dim)}
+.vacts{margin-top:auto;display:flex;gap:8px}
+.empty{padding:34px;text-align:center;font-family:var(--mono);font-size:.72rem;color:var(--dim);border:1px dashed var(--line2);border-radius:12px}
+
+/* tabs & stats */
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.tab{font-family:var(--mono);font-size:.64rem;letter-spacing:.1em;padding:11px 15px;border-radius:8px;border:1px solid var(--line2);background:none;color:var(--muted);display:flex;gap:8px;align-items:center;min-height:40px}
+.tab.on{background:var(--gold);border-color:var(--gold);color:#161006;font-weight:600}
+.tab b{background:rgba(0,0,0,.2);border-radius:10px;padding:1px 7px;font-size:.6rem}
+.tabpane{animation:rise .35s ease}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel2)}
+.stat{padding:15px 16px;border-bottom:1px solid var(--line)}
+.stat:nth-child(even){border-left:1px solid var(--line)}
+.stat small{font-family:var(--mono);font-size:.54rem;letter-spacing:.16em;color:var(--dim);display:block;margin-bottom:5px}
+.stat b{font-family:var(--mono);font-size:1.3rem;font-weight:600}
+.stat.gold b{color:var(--gold2)}.stat.mint b{color:var(--mint)}.stat.coral b{color:var(--coral)}
+@media(min-width:900px){.stats{grid-template-columns:repeat(5,1fr)}.stat{border-bottom:0;border-left:1px solid var(--line)}.stat:first-child{border-left:0}}
+.grid2{display:grid;grid-template-columns:1fr;gap:20px}
+@media(min-width:920px){.grid2{grid-template-columns:1fr 1.25fr}.grid2b{grid-template-columns:1.25fr 1fr}}
+.grid2b{display:grid;grid-template-columns:1fr;gap:20px}
+.banned{max-width:520px;margin:70px auto;text-align:center;border:1px solid rgba(255,93,73,.4);background:rgba(255,93,73,.06)}
+.banned h2{font-family:var(--disp);color:var(--coral)}
+#lb{position:fixed;inset:0;background:rgba(4,8,5,.9);display:grid;place-items:center;z-index:98;padding:20px;cursor:zoom-out}
+#lb img{max-width:92vw;max-height:88vh;border-radius:10px;border:1px solid var(--line2)}
+#toasts{position:fixed;bottom:18px;right:18px;left:18px;display:flex;flex-direction:column;gap:10px;z-index:99}
+@media(min-width:700px){#toasts{left:auto;max-width:340px}}
+.toast{background:var(--panel);border:1px solid var(--line2);border-left:3px solid var(--mint);border-radius:8px;padding:13px 16px;font-family:var(--mono);font-size:.72rem;box-shadow:0 20px 40px -18px #000;animation:tIn .35s cubic-bezier(.2,.9,.3,1.2)}
+.toast.warn{border-left-color:var(--coral)}.toast.gold{border-left-color:var(--gold)}
+.toast.out{animation:tOut .3s forwards}
+@keyframes tIn{from{opacity:0;transform:translateX(30px)}}
+@keyframes tOut{to{opacity:0;transform:translateX(30px)}}
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .55s ease,transform .55s ease}
+.reveal.in{opacity:1;transform:none}
+.copy{background:none;border:1px solid var(--line2);color:var(--muted);border-radius:6px;padding:6px 10px;font-family:var(--mono);font-size:.6rem;letter-spacing:.1em}
+.copy:hover{color:var(--gold2);border-color:var(--gold)}
+.search{max-width:280px;margin-bottom:12px}
+.setup{max-width:640px;margin:60px auto}
+.setup ol{margin:12px 0 0 20px;color:var(--muted);font-size:.88rem;line-height:2}
+.setup code{font-family:var(--mono);color:var(--gold2);font-size:.8rem}
+@media(prefers-reduced-motion:reduce){.tick-track,.embers span,.sparks,.arm{animation:none}.reveal{opacity:1;transform:none;transition:none}}
+</style>
+</head>
+<body>
+
+<div class="ticker">
+  <div class="live"><i></i>LIVE</div>
+  <div class="tick-wrap"><div class="tick-track" id="tickerTrack"></div></div>
+</div>
+
+<header class="top">
+  <div class="brand"><div class="mark">TF</div>
+    <div class="brand-t"><strong>TRADEFORCE</strong><span>ARTISANS ↔ CLIENTS · EARN EVERY SATURDAY</span></div>
+  </div>
+  <div class="userchip" id="userChip" hidden>
+    <span class="who" id="ucName"></span><span id="ucTag"></span>
+    <button class="btn btn-ghost btn-sm" id="btnLogout">Log out</button>
+  </div>
+</header>
+
+<main>
+<section id="setupView" hidden>
+  <div class="card setup">
+    <h3>⚙ One step left: connect Supabase</h3>
+    <p class="sub" style="margin-top:8px">Paste your credentials into the CONFIG block at the top of the script in this file:</p>
+    <ol><li>Copy <b>Project URL</b> + <b>anon public key</b> from Supabase → Settings → API</li>
+    <li>Paste into <code>SUPABASE_URL</code> and <code>SUPABASE_ANON_KEY</code></li>
+    <li>Commit the file</li></ol>
+  </div>
+</section>
+
+<!-- ══ LANDING + AUTH ══ -->
+<section id="authView" hidden>
+  <div class="hero">
+    <div class="embers" id="embers"></div>
+    <svg class="scene" viewBox="0 0 1200 320" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+      <rect y="302" width="1200" height="18" fill="#0d130c"/>
+      <g fill="#111a10">
+        <rect x="700" y="224" width="190" height="12" rx="3"/>
+        <rect x="714" y="236" width="10" height="68"/><rect x="866" y="236" width="10" height="68"/>
+        <rect x="960" y="150" width="14" height="152"/><rect x="1010" y="150" width="14" height="152"/>
+        <rect x="950" y="180" width="84" height="8"/><rect x="950" y="226" width="84" height="8"/><rect x="950" y="272" width="84" height="8"/>
+      </g>
+      <g><circle cx="640" cy="182" r="14" fill="#0e150d"/>
+        <path d="M640 196 q-7 40 -5 68 l12 0 q7 -36 5 -68z" fill="#0e150d"/>
+        <g class="arm"><rect x="648" y="198" width="48" height="9" rx="4.5" fill="#0e150d"/><rect x="690" y="184" width="11" height="27" rx="3" fill="#0e150d"/></g>
+      </g>
+      <g><circle cx="300" cy="212" r="13" fill="#0e150d"/>
+        <path d="M300 224 q-18 10 -21 46 l15 6 q10 -29 19 -42z" fill="#0e150d"/>
+        <circle class="torch" cx="334" cy="254" r="6" fill="#ffd469"/>
+        <g class="sparks" stroke="#f6b32b" stroke-width="2.4" stroke-linecap="round">
+          <line x1="334" y1="254" x2="356" y2="240"/><line x1="334" y1="254" x2="360" y2="254"/>
+          <line x1="334" y1="254" x2="352" y2="270"/><line x1="334" y1="254" x2="324" y2="232"/>
+        </g>
+      </g>
+      <g fill="#0e150d"><rect x="120" y="240" width="120" height="10" rx="3"/><rect x="130" y="250" width="9" height="52"/><rect x="222" y="250" width="9" height="52"/><circle cx="170" cy="228" r="12"/><path d="M170 240 q-6 26 -4 44 l10 0 q5 -24 4 -44z"/></g>
+    </svg>
+    <div class="hero-grid">
+      <div>
+        <div class="eyebrow">// TRADEFORCE COMMUNITY GROWTH PROGRAM</div>
+        <h1>Skilled hands build Nigeria.<br>You get <em>₦50</em> every time the group grows.</h1>
+        <p class="lede"><b>Tradeforce connects artisans with the people who need them.</b> Bring verified members into the WhatsApp group, upload the screenshot, and watch your balance climb — paid out <b>every Saturday</b>, no spreadsheets, no disputes.</p>
+        <div class="cta-row">
+          <button class="btn btn-ember" id="btnStart">🚀 Start earning now</button>
+          <button class="btn btn-ghost" id="btnLoginGo">I have a REF ID — log in</button>
+        </div>
+        <div class="how" style="margin-bottom:0;margin-top:26px">
+          <div><b>01</b><span><strong>Register</strong> — get your REF ID</span></div>
+          <div><b>02</b><span><strong>Upload</strong> the member's screenshot</span></div>
+          <div><b>03</b><span><strong>Admin verifies</strong> in the group</span></div>
+          <div><b>04</b><span><strong>Saturday</strong> — withdraw & get paid</span></div>
+        </div>
+      </div>
+      <div class="card earn">
+        <div class="earn-label"><i></i>LIVE · COMMUNITY EARNINGS</div>
+        <div class="earn-amt" id="simPaid">₦0</div>
+        <div class="earn-sub"><span><b id="simMems">0</b> members verified</span><span><b id="simRefs">0</b> referrers earning</span></div>
+        <div id="liveFeed"></div>
+      </div>
+    </div>
+  </div>
+  <div class="band reveal">
+    <div class="g"><small>PAID OUT TO DATE</small><b id="mPaid">–</b></div>
+    <div class="m"><small>MEMBERS VERIFIED</small><b id="mMems">–</b></div>
+    <div><small>ACTIVE REFERRERS</small><b id="mRefs">–</b></div>
+    <div class="e"><small>RATE PER VERIFIED MEMBER</small><b>₦50</b></div>
+  </div>
+  <div class="card reveal" id="authCard" style="max-width:560px;margin:30px auto 0">
+    <h3 id="authTitle">Log in</h3>
+    <p class="sub" id="authSub">Referrers log in below. Admins use the admin email created in Supabase.</p>
+    <div class="mode-btns" id="modeBtns">
+      <button type="button" id="modeLogin" class="on">LOG IN</button>
+      <button type="button" id="modeReg">REGISTER AS REFERRER</button>
+    </div>
+    <form id="paneLogin" autocomplete="off">
+      <label for="liEmail">EMAIL</label><input type="email" id="liEmail" required>
+      <label for="liPass">PASSWORD</label><input type="password" id="liPass" required>
+      <button class="btn btn-gold btn-full" style="margin-top:16px" id="liBtn" type="submit">Enter →</button>
+      <button class="link" type="button" id="btnForgot">Forgotten password? Reset it here</button>
+    </form>
+    <form id="paneReg" hidden autocomplete="off">
+      <label for="rgName">FULL NAME</label><input type="text" id="rgName" placeholder="e.g. Aisha Bello" required>
+      <label for="rgPhone">WHATSAPP NUMBER</label><input type="tel" id="rgPhone" placeholder="e.g. 0803 111 2201" required>
+      <label for="rgEmail">EMAIL</label><input type="email" id="rgEmail" required>
+      <label for="rgEmail2">CONFIRM EMAIL (TYPE IT AGAIN)</label><input type="email" id="rgEmail2" required>
+      <label for="rgPass">PASSWORD (MIN 6)</label><input type="password" id="rgPass" minlength="6" required>
+      <label for="rgPass2">CONFIRM PASSWORD (TYPE IT AGAIN)</label><input type="password" id="rgPass2" minlength="6" required>
+      <button class="btn btn-mint btn-full" style="margin-top:16px" id="rgBtn" type="submit">Create my REF ID →</button>
+    </form>
+    <form id="paneForgot" hidden autocomplete="off">
+      <label for="fgEmail">YOUR EMAIL</label><input type="email" id="fgEmail" required>
+      <button class="btn btn-gold btn-full" style="margin-top:16px" id="fgBtn" type="submit">Send reset link →</button>
+      <button class="link" type="button" id="fgBack">← Back to login</button>
+    </form>
+    <form id="paneReset" hidden autocomplete="off">
+      <p class="sub" style="margin-bottom:0">Set your new password below.</p>
+      <label for="rsPass">NEW PASSWORD (MIN 6)</label><input type="password" id="rsPass" minlength="6" required>
+      <label for="rsPass2">CONFIRM NEW PASSWORD</label><input type="password" id="rsPass2" minlength="6" required>
+      <button class="btn btn-gold btn-full" style="margin-top:16px" id="rsBtn" type="submit">Save new password →</button>
+    </form>
+    <p class="demo-hint">Signing up always creates a <b>REF</b> account. Admin access is granted only by the project owner inside Supabase.</p>
+  </div>
+</section>
+
+<section id="bannedView" hidden>
+  <div class="card banned">
+    <h2>ACCOUNT SUSPENDED</h2>
+    <p class="sub" style="margin-top:8px">This REF ID has been banned by Tradeforce admins for violating the referral rules. Contact an admin in the WhatsApp group if this is a mistake.</p>
+    <button class="btn btn-ghost" id="bannedOut">Back to login</button>
+  </div>
+</section>
+
+<!-- ══ REFERRER ══ -->
+<section id="refView" hidden>
+  <div class="sec-head"><span class="sec-no">◈</span><h2 id="refHi">Welcome back</h2><span class="sec-line"></span>
+    <span class="chip tag-ref" id="refIdChip">REF-0000</span>&nbsp;<button class="copy" id="copyRef">COPY ID</button></div>
+  <div class="grid2">
+    <div class="card bal">
+      <div class="bal-label">AVAILABLE BALANCE · SATURDAY PAYOUTS</div>
+      <div class="bal-amt" id="rAvail">₦0</div>
+      <div class="bal-grid">
+        <span class="g"><b id="rEarned">₦0</b>LIFETIME EARNED</span>
+        <span><b id="rVer">0</b>VERIFIED MEM</span>
+        <span><b id="rPend">0</b>AWAITING CHECK</span>
+        <span class="c"><b id="rRej">0</b>REJECTED</span>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Withdraw earnings</h3>
+      <p class="sub">Withdrawals open every Saturday. The server enforces this in West Africa Time.</p>
+      <div id="wdArea"></div>
+      <div class="wd-hist"><div class="bal-label" style="margin-bottom:6px">WITHDRAWAL HISTORY</div><div id="wdHist"></div></div>
+    </div>
+  </div>
+  <div class="sec-head" style="margin-top:34px"><span class="sec-no">01</span><h2>Submit a new member</h2><span class="sec-line"></span><span class="sec-meta">SCREENSHOT REQUIRED</span></div>
+  <div class="grid2b">
+    <div class="card">
+      <h3>Upload proof of entry</h3>
+      <p class="sub">Screenshot the new member in the Tradeforce WhatsApp group. ₦50 is credited after admin verification.</p>
+      <form id="memForm" autocomplete="off">
+        <label for="memName">NEW MEMBER'S NAME</label><input type="text" id="memName" placeholder="e.g. Ngozi Uche" required>
+        <label for="memPhone">THEIR WHATSAPP NUMBER (OPTIONAL)</label><input type="tel" id="memPhone">
+        <label>GROUP SCREENSHOT</label>
+        <label class="drop" id="dropLbl">⬆ TAP TO UPLOAD SCREENSHOT<input type="file" id="shotInput" accept="image/*"></label>
+        <div class="shot-prev" id="shotPrev" hidden><img id="shotImg" alt="preview"><button type="button" id="shotRm">✕</button></div>
+        <button class="btn btn-mint btn-full" style="margin-top:16px" id="memBtn" type="submit">Submit for verification →</button>
+      </form>
+    </div>
+    <div class="card">
+      <h3>My referrals</h3>
+      <p class="sub">Each verified member carries the MEM tag and adds ₦50.</p>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>TAG</th><th>MEMBER</th><th>SUBMITTED</th><th>STATUS</th></tr></thead>
+        <tbody id="myRows"><tr><td colspan="4" class="dim mono" style="padding:22px">Loading…</td></tr></tbody>
+      </table></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ ADMIN ═ -->
+<section id="adminView" hidden>
+  <div class="sec-head"><span class="sec-no">◈</span><h2>Admin Control Desk</h2><span class="sec-line"></span><span class="sec-meta">VERIFY · PAY · MONITOR · BAN</span></div>
+  <div class="stats">
+    <div class="stat"><small>ACTIVE REFERRERS</small><b id="aRefs">0</b></div>
+    <div class="stat gold"><small>VERIFY QUEUE</small><b id="aQueue">0</b></div>
+    <div class="stat mint"><small>MEMBERS VERIFIED</small><b id="aMems">0</b></div>
+    <div class="stat gold"><small>UNPAID OBLIGATION</small><b id="aOwe">₦0</b></div>
+    <div class="stat coral"><small>WITHDRAWALS</small><b id="aWd">0</b></div>
+  </div>
+  <div class="tabs" style="margin-top:20px">
+    <button class="tab on" data-tab="verify">VERIFY QUEUE <b id="tQueue">0</b></button>
+    <button class="tab" data-tab="wd">WITHDRAWALS <b id="tWd">0</b></button>
+    <button class="tab" data-tab="refs">REFERRERS</button>
+    <button class="tab" data-tab="mems">MEMBERS</button>
+  </div>
+  <div class="tabpane" id="pane-verify"><div class="vq" id="vqGrid"><div class="empty" style="grid-column:1/-1">Loading…</div></div></div>
+  <div class="tabpane" id="pane-wd" hidden>
+    <div class="card"><h3>Pending requests</h3><p class="sub">Transfer the money, then mark as paid.</p>
+      <div class="tbl-wrap"><table><thead><tr><th>ID</th><th>REFERRER</th><th>ACCOUNT</th><th>BANK</th><th>AMOUNT</th><th>WHEN</th><th></th></tr></thead><tbody id="wdReqRows"></tbody></table></div></div>
+    <div class="card" style="margin-top:20px"><h3>Paid out</h3><p class="sub">Receipt ledger.</p>
+      <div class="tbl-wrap"><table><thead><tr><th>ID</th><th>REFERRER</th><th>ACCOUNT</th><th>AMOUNT</th><th>PAID ON</th></tr></thead><tbody id="wdPaidRows"></tbody></table></div></div>
+  </div>
+  <div class="tabpane" id="pane-refs" hidden>
+    <div class="card"><h3>All referrer accounts</h3><p class="sub">Ban accounts caught gaming the system.</p>
+      <div class="tbl-wrap"><table><thead><tr><th>TAG</th><th>NAME</th><th>WHATSAPP</th><th>SUBMITTED</th><th>VERIFIED</th><th>BALANCE</th><th>PAID OUT</th><th>STATUS</th><th></th></tr></thead><tbody id="refRows"></tbody></table></div></div>
+  </div>
+  <div class="tabpane" id="pane-mems" hidden>
+    <div class="card"><h3>Member ledger (MEM)</h3><p class="sub">Every member, tagged and traceable.</p>
+      <input type="text" class="search" id="memSearch" placeholder="🔍 Search…">
+      <div class="tbl-wrap"><table><thead><tr><th>TAG</th><th>MEMBER</th><th>REFERRED BY</th><th>LOGGED</th><th>STATUS</th></tr></thead><tbody id="memRows"></tbody></table></div></div>
+  </div>
+</section>
+</main>
+
+<div id="lb" hidden><img id="lbImg" alt="screenshot"></div>
+<div id="toasts"></div>
+
+<script>
+/* ═══ CONFIG — PASTE YOUR SUPABASE CREDENTIALS ═══ */
+const SUPABASE_URL      = 'https://zhonwljyohzowqkstusd.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpob253bGp5b2h6b3dxa3N0dXNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxODMxMDIsImV4cCI6MjEwMTc1OTEwMn0.uAKAlNsFBdmFwtWJxdC5B-0auybdD7oTT3xZF-H6FOs';
+/* ═══════════════════════════════════════════════ */
+
+const RATE=50;
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const digits=s=>(s||'').replace(/\D/g,'');
+const fmtN=n=>'₦'+Math.round(n).toLocaleString('en-NG');
+const pad=(n,l=4)=>String(n).padStart(l,'0');
+const fmtT=ts=>new Date(ts).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+const fmtD=ts=>new Date(ts).toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+const isSaturday=()=>new Date().getDay()===6;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+let sb=null,USER=null,PROFILE=null,tempShot=null,memQuery='',RECOVERY=false;
+let CACHE={members:[],withdrawals:[],profiles:[]};
+const configured=()=>!SUPABASE_URL.includes('PASTE')&&!SUPABASE_ANON_KEY.includes('PASTE');
+
+function toast(msg,type=''){const el=document.createElement('div');el.className='toast '+type;el.textContent=msg;
+  $('#toasts').appendChild(el);setTimeout(()=>{el.classList.add('out');setTimeout(()=>el.remove(),320);},3800);}
+function setNum(el,to,money=false){const from=el._v||0;el._v=to;
+  if(from===to){el.textContent=money?fmtN(to):to;return;}
+  const t0=performance.now(),dur=620;
+  (function step(t){const p=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-p,3),v=Math.round(from+(to-from)*e);
+    el.textContent=money?fmtN(v):v;if(p<1)requestAnimationFrame(step);})(t0);}
+function copyText(t){navigator.clipboard?.writeText(t).then(()=>toast('Copied '+t,'gold'),()=>toast('Copy failed','warn'));}
+const shotURL=p=>sb.storage.from('screenshots').getPublicUrl(p).data.publicUrl;
+const earnedOf=id=>CACHE.members.filter(m=>m.referrer===id&&m.status==='verified').length*RATE;
+const paidOf=id=>CACHE.withdrawals.filter(w=>w.referrer===id&&w.status==='paid').reduce((s,w)=>s+w.amount,0);
+const lockedOf=id=>CACHE.withdrawals.filter(w=>w.referrer===id&&w.status==='requested').reduce((s,w)=>s+w.amount,0);
+const availOf=id=>earnedOf(id)-paidOf(id)-lockedOf(id);
+
+/* ══ simulated live earnings feed (demo, betting-app style) ══ */
+const FNAMES=['Aisha B.','Chinedu O.','Emeka E.','Funke A.','Musa G.','Tunde B.','Ngozi U.','Kelechi O.','Blessing O.','Sadiq A.','Grace E.','Amina Y.','Rotimi C.','Zainab K.'];
+let simPaid=2412500,simMems=18240,simRefs=3120;
+function pushFeed(){
+  const n=FNAMES[Math.floor(Math.random()*FNAMES.length)],r=Math.random();let html,amt;
+  if(r<.55){amt=50;simPaid+=50;simMems++;html=`<span>✅ <span class="who">${n}</span> verified a member</span><span class="amt">+₦50</span>`;}
+  else if(r<.85){amt=(Math.floor(Math.random()*20)+2)*500;simPaid+=amt;html=`<span>💸 <span class="who">${n}</span> withdrew</span><span class="amt">${fmtN(amt)}</span>`;}
+  else{amt=0;simRefs++;html=`<span>🚀 <span class="who">${n}</span> joined as a referrer</span><span class="amt">REF</span>`;}
+  const el=document.createElement('div');el.className='frow';el.innerHTML=html;
+  const feed=$('#liveFeed');feed.prepend(el);while(feed.children.length>5)feed.lastChild.remove();
+  const p=$('#simPaid');p.textContent=fmtN(simPaid);p.classList.remove('pop');void p.offsetWidth;p.classList.add('pop');
+  $('#simMems').textContent=simMems.toLocaleString();$('#simRefs').textContent=simRefs.toLocaleString();
+}
+setInterval(()=>{if(!$('#authView').hidden)pushFeed();},2600);
+/* embers */
+(function(){const box=$('#embers');for(let i=0;i<14;i++){const s=document.createElement('span');
+  s.style.left=Math.random()*100+'%';s.style.animationDuration=(6+Math.random()*7)+'s';s.style.animationDelay=(Math.random()*8)+'s';
+  box.appendChild(s);}})();
+
+function renderTicker(){
+  sb.rpc('public_stats').then(({data})=>{const s=data||{};
+    const items=[`RATE <b>₦50 / VERIFIED MEMBER</b>`,
+      isSaturday()?`<b>PAYDAY — WITHDRAWALS OPEN TODAY</b>`:`NEXT PAYOUT DAY <b>SATURDAY</b>`,
+      `REFERRERS <b>${s.referrers??'–'}</b>`,`MEMBERS VERIFIED <b>${s.verified??'–'}</b>`,
+      `PAID TO DATE <b>${fmtN(s.paid||0)}</b>`];
+    const html=items.map(i=>`<span class="tk"><i>▲</i>${i}</span>`).join('');
+    $('#tickerTrack').innerHTML=html+html;});
+}
+
+function showAuthPane(p){
+  ['Login','Reg','Forgot','Reset'].forEach(x=>$('#pane'+x).hidden=(x.toLowerCase()!==p));
+  $('#modeLogin').classList.toggle('on',p==='login');$('#modeReg').classList.toggle('on',p==='reg');
+  $('#modeBtns').hidden=(p==='reset');
+  $('#authTitle').textContent={login:'Log in',reg:'Create your referrer account',forgot:'Reset your password',reset:'Choose a new password'}[p];
+}
+$('#modeLogin').onclick=()=>showAuthPane('login');
+$('#modeReg').onclick=()=>showAuthPane('reg');
+$('#btnForgot').onclick=()=>showAuthPane('forgot');
+$('#fgBack').onclick=()=>showAuthPane('login');
+$('#btnStart').onclick=()=>{showAuthPane('reg');$('#authCard').scrollIntoView({behavior:'smooth'});};
+$('#btnLoginGo').onclick=()=>{showAuthPane('login');$('#authCard').scrollIntoView({behavior:'smooth'});};
+
+function renderShell(){
+  $('#setupView').hidden=true;
+  $('#authView').hidden=!!USER;
+  $('#bannedView').hidden=!(USER&&PROFILE?.banned);
+  $('#refView').hidden=!(USER&&PROFILE&&PROFILE.role==='ref'&&!PROFILE.banned);
+  $('#adminView').hidden=!(USER&&PROFILE&&PROFILE.role==='admin');
+  $('#userChip').hidden=!USER;
+  if(USER&&PROFILE){$('#ucName').textContent=PROFILE.name;
+    const t=$('#ucTag');t.className='chip '+(PROFILE.role==='admin'?'tag-admin':'tag-ref');t.textContent=PROFILE.ref_id;}
+  if(!USER){renderTicker();sb?.rpc('public_stats').then(({data})=>{if(data){
+    $('#mRefs').textContent=data.referrers;$('#mMems').textContent=data.verified;$('#mPaid').textContent=fmtN(data.paid);}});}
+}
+
+async function boot(user){
+  USER=user;let {data}=await sb.from('profiles').select('*').eq('id',user.id).maybeSingle();
+  if(!data){await sleep(900);({data}=await sb.from('profiles').select('*').eq('id',user.id).maybeSingle());}
+  PROFILE=data;renderShell();
+  if(PROFILE?.role==='admin')loadAdmin();else if(PROFILE&&!PROFILE.banned)loadRef();
+}
+
+/* auth submits */
+$('#paneLogin').onsubmit=async e=>{e.preventDefault();
+  const b=$('#liBtn');b.disabled=true;b.textContent='CHECKING…';
+  const {data,error}=await sb.auth.signInWithPassword({email:$('#liEmail').value.trim(),password:$('#liPass').value});
+  b.disabled=false;b.textContent='Enter →';
+  if(error)return toast(error.message,'warn');
+  e.target.reset();await boot(data.user);toast('Logged in','gold');};
+
+$('#paneReg').onsubmit=async e=>{e.preventDefault();
+  const email=$('#rgEmail').value.trim().toLowerCase(),email2=$('#rgEmail2').value.trim().toLowerCase();
+  const pass=$('#rgPass').value,pass2=$('#rgPass2').value;
+  if(email!==email2){$('#rgEmail2').classList.add('err');setTimeout(()=>$('#rgEmail2').classList.remove('err'),400);return toast('Emails do not match — check your typing','warn');}
+  if(pass!==pass2){$('#rgPass2').classList.add('err');setTimeout(()=>$('#rgPass2').classList.remove('err'),400);return toast('Passwords do not match — check your typing','warn');}
+  const b=$('#rgBtn');b.disabled=true;b.textContent='CREATING…';
+  const {data,error}=await sb.auth.signUp({email,password:pass,options:{data:{name:$('#rgName').value.trim(),whatsapp:digits($('#rgPhone').value)}}});
+  b.disabled=false;b.textContent='Create my REF ID →';
+  if(error)return toast(error.message,'warn');
+  e.target.reset();
+  if(!data.session)return toast('Check your email to confirm, then log in','gold');
+  await boot(data.user);toast('Welcome — your REF ID is ready','gold');};
+
+$('#paneForgot').onsubmit=async e=>{e.preventDefault();
+  const b=$('#fgBtn');b.disabled=true;b.textContent='SENDING…';
+  const {error}=await sb.auth.resetPasswordForEmail($('#fgEmail').value.trim(),{redirectTo:location.origin+location.pathname});
+  b.disabled=false;b.textContent='Send reset link →';
+  if(error)return toast(error.message,'warn');
+  toast('Reset link sent — open it from your email inbox','gold');showAuthPane('login');};
+
+$('#paneReset').onsubmit=async e=>{e.preventDefault();
+  if($('#rsPass').value!==$('#rsPass2').value)return toast('Passwords do not match','warn');
+  const b=$('#rsBtn');b.disabled=true;b.textContent='SAVING…';
+  const {error}=await sb.auth.updateUser({password:$('#rsPass').value});
+  b.disabled=false;b.textContent='Save new password →';
+  if(error)return toast(error.message,'warn');
+  toast('Password changed — welcome back!','gold');
+  RECOVERY=false;await boot(USER);};
+
+$('#btnLogout').onclick=async()=>{await sb.auth.signOut();USER=null;PROFILE=null;renderShell();};
+$('#bannedOut').onclick=async()=>{await sb.auth.signOut();USER=null;PROFILE=null;renderShell();};
+$('#copyRef').onclick=()=>copyText(PROFILE.ref_id);
+
+/* referrer */
+async function loadRef(){
+  const [{data:m},{data:w}]=await Promise.all([
+    sb.from('members').select('*').eq('referrer',USER.id).order('created_at',{ascending:false}),
+    sb.from('withdrawals').select('*').eq('referrer',USER.id).order('created_at',{ascending:false})]);
+  CACHE.members=m||[];CACHE.withdrawals=w||[];
+  $('#refHi').textContent='Welcome back, '+PROFILE.name.split(' ')[0];
+  $('#refIdChip').textContent=PROFILE.ref_id;
+  setNum($('#rAvail'),availOf(USER.id),true);setNum($('#rEarned'),earnedOf(USER.id),true);
+  setNum($('#rVer'),CACHE.members.filter(x=>x.status==='verified').length);
+  setNum($('#rPend'),CACHE.members.filter(x=>x.status==='pending').length);
+  setNum($('#rRej'),CACHE.members.filter(x=>x.status==='rejected').length);
+  $('#myRows').innerHTML=CACHE.members.map((m,i)=>`<tr style="animation-delay:${Math.min(i*25,250)}ms">
+    <td data-l="TAG"><span class="chip tag-mem">${m.id}</span></td><td data-l="MEMBER">${m.member_name}</td>
+    <td data-l="SUBMITTED" class="mono dim">${fmtT(m.created_at)}</td>
+    <td data-l="STATUS">${m.status==='verified'?'<span class="schip s-verified">VERIFIED +₦50</span>'
+      :m.status==='pending'?'<span class="schip s-pending">AWAITING ADMIN</span>'
+      :`<span class="schip s-rejected">REJECTED</span>`}</td></tr>`).join('')
+    ||'<tr><td colspan="4" class="dim mono" style="padding:22px">No referrals yet — upload your first screenshot.</td></tr>';
+  renderWdArea();renderWdHist();
+}
+function renderWdArea(){
+  const av=availOf(USER.id),area=$('#wdArea');
+  if(!isSaturday()){
+    const n=new Date(),d=new Date(n);d.setHours(0,0,0,0);d.setDate(d.getDate()+((6-d.getDay()+7)%7));
+    const ms=d-n,dd=Math.floor(ms/864e5),h=Math.floor(ms/36e5)%24,m=Math.floor(ms/6e4)%60;
+    area.innerHTML=`<div class="gate"><div class="bal-label">WITHDRAWALS ARE SATURDAY-ONLY</div>
+      <div class="g2">OPENS IN ${dd}d ${pad(h,2)}h ${pad(m,2)}m</div>
+      <div class="g3">Come back Saturday with your account number — your <b style="color:var(--gold2)">${fmtN(av)}</b> is safe.</div></div>`;
+    return;}
+  area.innerHTML=`<div class="open-badge">◉ IT'S SATURDAY — WITHDRAWALS OPEN</div>
+    <form id="wdForm"><div class="bal-label" style="margin-bottom:4px">FULL AVAILABLE BALANCE</div>
+    <div style="font-family:var(--mono);font-size:1.5rem;color:var(--gold2);margin-bottom:8px">${fmtN(av)}</div>
+    <label for="wdAcct">ACCOUNT NUMBER (10 DIGITS)</label><input type="tel" id="wdAcct" maxlength="10" required>
+    <label for="wdBank">BANK / WALLET</label><input type="text" id="wdBank" list="bankList" required>
+    <datalist id="bankList">${['Opay','PalmPay','GTBank','Access Bank','Zenith Bank','First Bank','Kuda','Moniepoint','UBA','Fidelity'].map(b=>`<option value="${b}">`).join('')}</datalist>
+    <button class="btn btn-gold btn-full" style="margin-top:14px" id="wdBtn" ${av<=0?'disabled':''}>Request withdrawal →</button></form>`;
+  $('#wdForm').onsubmit=async e=>{e.preventDefault();
+    if(av<=0)return toast('Nothing to withdraw yet','warn');
+    const acct=digits($('#wdAcct').value);
+    if(acct.length!==10)return toast('Account number must be 10 digits','warn');
+    const b=$('#wdBtn');b.disabled=true;b.textContent='SENDING…';
+    const {error}=await sb.from('withdrawals').insert({referrer:USER.id,amount:av,account_no:acct,bank:$('#wdBank').value.trim()});
+    if(error){b.disabled=false;b.textContent='Request withdrawal →';return toast(error.message,'warn');}
+    toast(`Withdrawal of ${fmtN(av)} sent to the admins`,'gold');loadRef();};
+}
+function renderWdHist(){
+  $('#wdHist').innerHTML=CACHE.withdrawals.slice(0,6).map(w=>`<div class="wd-row"><span class="dim">${w.id}</span>
+    <span class="dim">${fmtD(w.created_at)}</span>
+    ${w.status==='paid'?'<span class="schip s-paid">PAID</span>':'<span class="schip s-requested">REQUESTED</span>'}
+    <span class="amt">${fmtN(w.amount)}</span></div>`).join('')
+    ||'<div class="dim mono" style="font-size:.7rem;padding:6px 0">No withdrawals yet.</div>';
+}
+function compress(file,cb){const rd=new FileReader();
+  rd.onload=ev=>{const img=new Image();img.onload=()=>{const M=640,s=Math.min(1,M/Math.max(img.width,img.height));
+    const c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',.62));};img.src=ev.target.result;};rd.readAsDataURL(file);}
+const d2b=d=>{const b=atob(d.split(',')[1]),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return new Blob([a],{type:'image/jpeg'});};
+$('#shotInput').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;
+  if(!f.type.startsWith('image/'))return toast('Upload an image file','warn');
+  compress(f,d=>{tempShot=d;$('#shotImg').src=d;$('#shotPrev').hidden=false;$('#dropLbl').hidden=true;});});
+$('#shotRm').onclick=()=>{tempShot=null;$('#shotInput').value='';$('#shotPrev').hidden=true;$('#dropLbl').hidden=false;};
+$('#memForm').onsubmit=async e=>{e.preventDefault();
+  if(!tempShot)return toast('A group screenshot is required as proof','warn');
+  const b=$('#memBtn');b.disabled=true;b.textContent='UPLOADING…';
+  const path=`${USER.id}/${Date.now()}.jpg`;
+  const {error:up}=await sb.storage.from('screenshots').upload(path,d2b(tempShot),{contentType:'image/jpeg'});
+  if(up){b.disabled=false;b.textContent='Submit for verification →';return toast('Upload failed: '+up.message,'warn');}
+  const {error:ins}=await sb.from('members').insert({referrer:USER.id,member_name:$('#memName').value.trim(),whatsapp:digits($('#memPhone').value)||null,shot:path});
+  b.disabled=false;b.textContent='Submit for verification →';
+  if(ins)return toast(ins.message,'warn');
+  e.target.reset();tempShot=null;$('#shotPrev').hidden=true;$('#dropLbl').hidden=false;
+  toast('Submitted — an admin will verify it in the group','gold');loadRef();};
+
+/* admin */
+async function loadAdmin(){
+  const [{data:m},{data:w},{data:p}]=await Promise.all([
+    sb.from('members').select('*, profile:profiles(ref_id,name)').order('created_at',{ascending:false}),
+    sb.from('withdrawals').select('*, profile:profiles(ref_id,name)').order('created_at',{ascending:false}),
+    sb.from('profiles').select('*').eq('role','ref').order('created_at')]);
+  CACHE.members=m||[];CACHE.withdrawals=w||[];CACHE.profiles=p||[];
+  const pend=CACHE.members.filter(x=>x.status==='pending');
+  const req=CACHE.withdrawals.filter(x=>x.status==='requested');
+  setNum($('#aRefs'),CACHE.profiles.filter(r=>!r.banned).length);setNum($('#aQueue'),pend.length);
+  setNum($('#aMems'),CACHE.members.filter(x=>x.status==='verified').length);
+  setNum($('#aOwe'),CACHE.profiles.reduce((s,r)=>s+availOf(r.id)+lockedOf(r.id),0),true);
+  setNum($('#aWd'),req.length);$('#tQueue').textContent=pend.length;$('#tWd').textContent=req.length;
+  $('#vqGrid').innerHTML=pend.slice().reverse().map(x=>`<div class="vcard">
+      ${x.shot?`<img src="${shotURL(x.shot)}" data-shot loading="lazy" alt="shot">`:'<div class="empty" style="padding:0;display:grid;place-items:center">NO SHOT</div>'}
+      <div class="vmeta"><span class="nm">${x.member_name} <span class="chip tag-mem">${x.id}</span></span>
+        <span>By <span class="chip tag-ref">${x.profile?.ref_id}</span> · ${x.profile?.name||'?'}</span>
+        <span class="when">SUBMITTED ${fmtT(x.created_at)} · ₦50 if verified</span>
+        <div class="vacts"><button class="btn btn-mint btn-sm" data-act="app" data-id="${x.id}">✓ Verify</button>
+        <button class="btn btn-coral btn-sm" data-act="rej" data-id="${x.id}">✕ Reject</button></div></div></div>`).join('')
+    ||'<div class="empty" style="grid-column:1/-1">QUEUE CLEAR ✓</div>';
+  $('#wdReqRows').innerHTML=req.map(w=>`<tr><td data-l="ID" class="mono">${w.id}</td>
+    <td data-l="REFERRER"><span class="chip tag-ref">${w.profile?.ref_id}</span> ${w.profile?.name||''}</td>
+    <td data-l="ACCOUNT" class="mono acct">${w.account_no}</td><td data-l="BANK">${w.bank}</td>
+    <td data-l="AMOUNT" class="mono" style="color:var(--gold2);font-weight:600">${fmtN(w.amount)}</td>
+    <td data-l="WHEN" class="mono dim">${fmtT(w.created_at)}</td>
+    <td data-l=""><button class="btn btn-gold btn-sm" data-act="pay" data-id="${w.id}">Mark paid</button></td></tr>`).join('')
+    ||'<tr><td colspan="7" class="dim mono" style="padding:20px">No pending requests.</td></tr>';
+  $('#wdPaidRows').innerHTML=CACHE.withdrawals.filter(w=>w.status==='paid').map(w=>`<tr>
+    <td data-l="ID" class="mono">${w.id}</td><td data-l="REFERRER"><span class="chip tag-ref">${w.profile?.ref_id}</span> ${w.profile?.name||''}</td>
+    <td data-l="ACCOUNT" class="mono dim">···${w.account_no.slice(-4)} · ${w.bank}</td>
+    <td data-l="AMOUNT" class="mono" style="color:var(--mint)">${fmtN(w.amount)}</td>
+    <td data-l="PAID" class="mono dim">${w.paid_at?fmtT(w.paid_at):'–'}</td></tr>`).join('')
+    ||'<tr><td colspan="5" class="dim mono" style="padding:20px">Nothing paid yet.</td></tr>';
+  $('#refRows').innerHTML=CACHE.profiles.map(u=>`<tr style="opacity:${u.banned?.55:1}">
+    <td data-l="TAG"><span class="chip tag-ref">${u.ref_id}</span></td><td data-l="NAME">${u.name}</td>
+    <td data-l="WHATSAPP" class="mono dim">+${u.whatsapp||'–'}</td>
+    <td data-l="SUBMITTED" class="mono">${CACHE.members.filter(m=>m.referrer===u.id).length}</td>
+    <td data-l="VERIFIED" class="mono" style="color:var(--mint)">${CACHE.members.filter(m=>m.referrer===u.id&&m.status==='verified').length}</td>
+    <td data-l="BALANCE" class="mono" style="color:var(--gold2);font-weight:600">${fmtN(availOf(u.id))}</td>
+    <td data-l="PAID" class="mono dim">${fmtN(paidOf(u.id))}</td>
+    <td data-l="STATUS">${u.banned?'<span class="schip s-banned">BANNED</span>':'<span class="schip s-active">ACTIVE</span>'}</td>
+    <td data-l=""><button class="btn btn-sm ${u.banned?'btn-mint':'btn-coral'}" data-act="ban" data-id="${u.id}">${u.banned?'Unban':'Ban'}</button></td></tr>`).join('');
+  renderMems();renderTicker();
+}
+function renderMems(){
+  const q=memQuery.toLowerCase();
+  const rows=CACHE.members.filter(m=>!q||m.member_name.toLowerCase().includes(q)||m.id.toLowerCase().includes(q)||(m.profile?.ref_id||'').toLowerCase().includes(q));
+  $('#memRows').innerHTML=rows.map(m=>`<tr><td data-l="TAG"><span class="chip tag-mem">${m.id}</span></td>
+    <td data-l="MEMBER">${m.member_name}</td><td data-l="REF"><span class="chip tag-ref">${m.profile?.ref_id}</span></td>
+    <td data-l="LOGGED" class="mono dim">${fmtT(m.created_at)}</td>
+    <td data-l="STATUS">${m.status==='verified'?'<span class="schip s-verified">VERIFIED</span>'
+      :m.status==='pending'?'<span class="schip s-pending">PENDING</span>':'<span class="schip s-rejected">REJECTED</span>'}</td></tr>`).join('')
+    ||'<tr><td colspan="5" class="dim mono" style="padding:20px">No members match.</td></tr>';
+}
+$('#memSearch').addEventListener('input',e=>{memQuery=e.target.value;renderMems();});
+$$('.tab').forEach(t=>t.onclick=()=>{$$('.tab').forEach(x=>x.classList.remove('on'));t.classList.add('on');
+  ['verify','wd','refs','mems'].forEach(k=>$('#pane-'+k).hidden=(k!==t.dataset.tab));});
+
+document.addEventListener('click',async e=>{
+  const img=e.target.closest('[data-shot]');
+  if(img){$('#lbImg').src=img.src;$('#lb').hidden=false;return;}
+  if(e.target.closest('#lb')){$('#lb').hidden=true;return;}
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const {act,id}=b.dataset;b.disabled=true;
+  if(act==='app'){const {error}=await sb.from('members').update({status:'verified'}).eq('id',id);
+    error?toast(error.message,'warn'):(toast(`${id} verified — ₦50 credited`),loadAdmin());}
+  if(act==='rej'){
+    if(!b.classList.contains('armed')){b.classList.add('armed');b.textContent='TAP AGAIN';b.disabled=false;
+      setTimeout(()=>{b.classList.remove('armed');b.textContent='✕ Reject';b.disabled=false;},2600);return;}
+    const {error}=await sb.from('members').update({status:'rejected',note:"Didn't match group records"}).eq('id',id);
+    error?toast(error.message,'warn'):(toast('Rejected','warn'),loadAdmin());}
+  if(act==='pay'){const {error}=await sb.from('withdrawals').update({status:'paid',paid_at:new Date().toISOString()}).eq('id',id);
+    error?toast(error.message,'warn'):(toast(`${id} marked as paid`,'gold'),loadAdmin());}
+  if(act==='ban'){const u=CACHE.profiles.find(x=>x.id===id);
+    const {error}=await sb.from('profiles').update({banned:!u.banned}).eq('id',id);
+    error?toast(error.message,'warn'):(toast(u.banned?`${u.ref_id} restored`:`${u.ref_id} banned`,u.banned?'gold':'warn'),loadAdmin());}
+});
+
+window.addEventListener('load',async()=>{
+  if(!configured()){$('#setupView').hidden=false;return;}
+  sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+  sb.auth.onAuthStateChange((ev,sess)=>{
+    if(ev==='PASSWORD_RECOVERY'&&sess){RECOVERY=true;USER=sess.user;renderShell();
+      $('#authView').hidden=false;showAuthPane('reset');toast('Set your new password below','gold');}
+    if(ev==='SIGNED_OUT'){USER=null;PROFILE=null;renderShell();}});
+  const {data:{session}}=await sb.auth.getSession();
+  if(session&&!RECOVERY)await boot(session.user);else renderShell();
+  for(let i=0;i<4;i++)pushFeed();
+});
+const io=new IntersectionObserver(es=>es.forEach(x=>x.isIntersecting&&x.target.classList.add('in')),{threshold:.1});
+$$('.reveal').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>
